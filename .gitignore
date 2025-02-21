@@ -1,0 +1,9 @@
+# Environments
+virtualenv/
+__pycache__/
+.env/
+*/idea/
+*.idea*
+*.pyc*
+
+
