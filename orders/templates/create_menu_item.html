@@ -1,0 +1,17 @@
+<!-- Создание нового блюда -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить Блюдо</title>
+</head>
+<body>
+    <h1>Добавить Новое Блюдо</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Добавить</button>
+    </form>
+    <a href="{% url 'menu_item_list' %}">Назад к списку блюд</a>
+</body>
+</html>

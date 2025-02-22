@@ -1,0 +1,23 @@
+<!-- home.html -->
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добро Пожаловать в Кафе</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <h1>Добро Пожаловать в Кафе!</h1>
+    <p>Выберите один из следующих вариантов:</p>
+    <ul>
+        <li><a href="{% url 'create_order' %}">Сделать заказ</a></li>
+
+        <!-- Для администратора, дополнительные ссылки -->
+        {% if user.is_staff %}
+            <li><a href="{% url 'menu_item_list' %}">Управление блюдами</a></li>
+        {% endif %}
+    </ul>
+</body>
+</html>

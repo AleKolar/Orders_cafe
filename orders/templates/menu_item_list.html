@@ -1,0 +1,17 @@
+<!-- Список блюд -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список Блюд</title>
+</head>
+<body>
+    <h1>Список Блюд</h1>
+    <a href="{% url 'create_menu_item' %}">Добавить Блюдо</a>
+    <ul>
+        {% for item in items %}
+            <li>{{ item.name }} - {{ item.price }} ₽</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

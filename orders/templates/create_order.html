@@ -1,0 +1,54 @@
+<!-- Создание нового заказа -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание Заказа</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script>
+        function calculateTotal() {
+            let total = 0;
+            const quantities = document.querySelectorAll('.formset_row');
+            quantities.forEach(row => {
+                const price = parseFloat(row.getAttribute('data-price'));
+                const quantity = parseInt(row.querySelector('.quantity').value) || 0;
+                total += price * quantity;
+            });
+            document.getElementById('total-price').innerText = total.toFixed(2) + ' ₽';
+        }
+    </script>
+</head>
+<body>
+    <h1>Создание Заказа</h1>
+    <form method="post">
+        {% csrf_token %}
+
+        {{ order_form.as_p }}  <!-- Отображение формы заказа -->
+
+        <h2>Выберите блюда</h2>
+        {{ order_item_formset.management_form }}  <!-- Управляющая форма для подсчета количества форм -->
+        {% for form in order_item_formset %}
+        <div class="formset_row" data-price="{% if form.instance.menu_item %}{{ form.instance.menu_item.price }}{% else %}0{% endif %}">
+        {{ form.as_p }}  <!-- Отображение формы для каждого блюда -->
+        </div>
+        {% endfor %}
+
+        <h3>Итоговая стоимость: <span id="total-price">0.00 ₽</span></h3>
+
+        <button type="submit">Создать заказ</button>
+    </form>
+
+    <a href="{% url 'order_list' %}">Назад к списку заказов</a>
+
+    <script>
+        // Запускаем расчет итоговой стоимости при загрузке страницы
+        calculateTotal();
+        // Добавляем обработчик для изменения количества
+        document.querySelectorAll('.quantity').forEach(input => {
+            input.addEventListener('change', calculateTotal);
+        });
+    </script>
+</body>
+</html>

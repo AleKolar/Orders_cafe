@@ -1,4 +1,4 @@
-# myproject/urls.py
+# cafe_management/urls.py
 """cafe_management URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -19,8 +19,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from orders.views import home
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('orders/', include('orders.urls')),
+    path('', home, name='home'),
+
+
 ]
 
