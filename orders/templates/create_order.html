@@ -18,6 +18,36 @@
             });
             document.getElementById('total-price').innerText = total.toFixed(2) + ' ₽';
         }
+
+        function addMenuItem() {
+            const formsetContainer = document.getElementById('formset-container');
+            const totalForms = document.getElementById('id_orderitemformset-TOTAL_FORMS');
+            const currentFormCount = parseInt(totalForms.value);
+
+            // Создаем новую строку для блюда
+            const newForm = document.createElement('div');
+            newForm.className = 'formset_row';
+            newForm.setAttribute('data-price', '0');  // Установка значения по умолчанию
+
+            newForm.innerHTML = `
+                ${order_item_formset.forms[currentFormCount].menu_item}
+                ${order_item_formset.forms[currentFormCount].quantity}
+                <div class="error">${order_item_formset.forms[currentFormCount].non_field_errors}</div>
+            `;
+
+            formsetContainer.appendChild(newForm);
+            totalForms.value = currentFormCount + 1;  // Увеличиваем общее количество форм
+
+            // Пересчитываем итог после добавления элемента
+            calculateTotal();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateTotal();
+            document.querySelectorAll('.quantity').forEach(input => {
+                input.addEventListener('change', calculateTotal);
+            });
+        });
     </script>
 </head>
 <body>
@@ -29,11 +59,21 @@
 
         <h2>Выберите блюда</h2>
         {{ order_item_formset.management_form }}  <!-- Управляющая форма для подсчета количества форм -->
-        {% for form in order_item_formset %}
-        <div class="formset_row" data-price="{% if form.instance.menu_item %}{{ form.instance.menu_item.price }}{% else %}0{% endif %}">
-        {{ form.as_p }}  <!-- Отображение формы для каждого блюда -->
+
+        <div id="formset-container">
+            {% for form in order_item_formset %}
+            <div class="formset_row" data-price="{% if form.instance.menu_item %}{{ form.instance.menu_item.price }}{% else %}0{% endif %}">
+                {{ form.menu_item }}  <!-- Отображение поля выбора для блюда -->
+                {{ form.quantity }}  <!-- Отображение поля количества -->
+                {% if form.non_field_errors %}
+                    <div class="error">{{ form.non_field_errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+
+        <!-- Добавляем кнопку для добавления нового блюда -->
+        <button type="button" onclick="addMenuItem()">Добавить блюдо</button>
 
         <h3>Итоговая стоимость: <span id="total-price">0.00 ₽</span></h3>
 
@@ -41,14 +81,6 @@
     </form>
 
     <a href="{% url 'order_list' %}">Назад к списку заказов</a>
-
-    <script>
-        // Запускаем расчет итоговой стоимости при загрузке страницы
-        calculateTotal();
-        // Добавляем обработчик для изменения количества
-        document.querySelectorAll('.quantity').forEach(input => {
-            input.addEventListener('change', calculateTotal);
-        });
-    </script>
 </body>
 </html>
+

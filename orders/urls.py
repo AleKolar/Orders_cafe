@@ -1,21 +1,24 @@
 # orders/urls.py
-from django.urls import path
-from .views import (
-    menu_item_list,
-    create_menu_item,
-    order_list,
-    create_order,
-    update_order_status,
-    delete_order,
-    revenue,
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+
+from .views import OrderViewSet
+
+router = DefaultRouter()
+router.register(r'orders', OrderViewSet)
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="Order API",
+      default_version='v1',
+      description="API для управления заказами",
+   ),
+   public=True,
 )
 
 urlpatterns = [
-    path('menu/', menu_item_list, name='menu_item_list'),
-    path('menu/create/', create_menu_item, name='create_menu_item'),
-    path('orders/', order_list, name='order_list'),
-    path('orders/create/', create_order, name='create_order'),
-    path('orders/update/<int:order_id>/', update_order_status, name='update_order_status'),
-    path('orders/delete/<int:order_id>/', delete_order, name='delete_order'),
-    path('orders/revenue/', revenue, name='revenue'),
+    path('api/', include(router.urls)),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

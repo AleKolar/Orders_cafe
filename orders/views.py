@@ -1,83 +1,67 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Order, MenuItem, OrderItem
-from .forms import MenuItemForm, OrderForm, OrderItemForm, OrderItemFormSet
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Sum
+from rest_framework import viewsets
+from rest_framework.reverse import reverse
+from rest_framework.views import APIView
 
+from .models import Order
+from .serializers import OrderSerializer
+from rest_framework.response import Response
+from rest_framework import status
 
-def home(request):
-    return render(request, 'home.html')
+class OrderViewSet(viewsets.ModelViewSet):
+    """
+    Manage orders in the system.
+    This endpoint allows you to create, retrieve, update, and delete orders.
+    """
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
 
-# Декоратор для проверки администратора
-def admin_required(view_func):
-    return user_passes_test(lambda u: u.is_superuser)(view_func)
+    def list(self, request):  # Получение списка всех заказов
 
-# 1. Список блюд
-def menu_item_list(request):
-    items = MenuItem.objects.all()
-    return render(request, 'menu_item_list.html', {'items': items})
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
-# 2. Создание нового блюда (администратор)
-@admin_required
-def create_menu_item(request):
-    if request.method == 'POST':
-        form = MenuItemForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('menu_item_list')
-    else:
-        form = MenuItemForm()
-    return render(request, 'create_menu_item.html', {'form': form})
+    def retrieve(self, request, pk=None):  # Получение заказа по ID
+        """
+        Retrieve a list of all orders.
+        """
+        order = self.get_object()
+        serializer = self.get_serializer(order)
+        return Response(serializer.data)
 
-# 3. Список всех заказов
-@admin_required
-def order_list(request):
-    orders = Order.objects.all()
-    return render(request, 'order_list.html', {'orders': orders})
+    def create(self, request):  # Создание нового заказа
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def update(self, request, pk=None):  # Обновление существующего заказа
+        order = self.get_object()
+        serializer = self.get_serializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-def create_order(request):
-    if request.method == 'POST':
-        order_form = OrderForm(request.POST)
-        order_item_formset = OrderItemFormSet(request.POST)
+    def destroy(self, request, pk=None):  # Удаление заказа
+        order = self.get_object()
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-        if order_form.is_valid() and order_item_formset.is_valid():
-            order = order_form.save()
-            order_items = order_item_formset.save(commit=False)
-            for item in order_items:
-                item.order = order  # Связываем с заказом
-                item.save()
-    # Редирект на страницу после успешного создания заказа
-    else:
-        order_form = OrderForm()
-        order_item_formset = OrderItemFormSet(queryset=OrderItem.objects.none())
+class RevenueView(APIView):  # Расчет выручки за смену
+    def get(self, request):
+        total_revenue = Order.objects.filter(status='paid').aggregate(Sum('total_price'))['total_price'] or 0
+        return Response({'total_revenue': total_revenue})
 
-    context = {
-        'order_form': order_form,
-        'order_item_formset': order_item_formset,
-    }
-    return render(request, 'create_order.html', context)
-
-
-# 5. Изменение статуса заказа
-@admin_required
-def update_order_status(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-    if request.method == 'POST':
-        order.status = request.POST.get('status')
-        order.save()
-        return redirect('order_list')
-
-    return render(request, 'update_order_status.html', {'order': order})
-
-# 6. Удаление заказа
-@admin_required
-def delete_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-    order.delete()
-    return redirect('order_list')
-
-# 7. Расчет выручки
-@admin_required
-def revenue(request):
-    total_revenue = sum(order.total_price for order in Order.objects.filter(status='paid'))
-    return render(request, 'revenue.html', {'total_revenue': total_revenue})
+class ApiRoot(APIView):
+    """
+    API root view.
+    Returns links to the available API endpoints, including the list of orders and Swagger documentation.
+    """
+    def get(self, request, format=None):
+        return Response({
+            'orders': reverse('order-list', request=request, format=format),
+            'swagger': reverse('schema-swagger-ui', request=request, format=format),
+        })
