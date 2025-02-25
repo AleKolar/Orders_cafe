@@ -3,9 +3,10 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum
-from django.urls import reverse
+from django.shortcuts import render
 from .models import Order, Items
-from .serializers import OrderSerializer, ItemsSerializer
+from .serializers import OrderSerializer, ItemsSerializer, OrderCreateSerializer
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     """ Управление заказами в системе """
@@ -26,53 +27,41 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     # Создание нового заказа
     def create(self, request):
-        # Извлекаем данные из запроса
-        table_number = request.data.get('table_number')
-        items_data = request.data.get('items')  # Ожидаем список блюд с количеством
+        serializer = OrderCreateSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):  # Валидация и выброс исключения
+            table_number = serializer.validated_data['table_number']
+            items_data = serializer.validated_data['items']  # Получаем уже валидированные данные
 
-        # Проверяем валидность table_number
-        if not isinstance(table_number, int):
-            return Response({"error": "Номер стола должен быть целым числом."}, status=status.HTTP_400_BAD_REQUEST)
+            total_price = 0
+            items_list = []
 
-        # Проверяем, что items_data не пустой
-        if not items_data or not isinstance(items_data, list):
-            return Response({"error": "Список блюд не может быть пустым и должен быть списком."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            for data in items_data:
+                item_id = data.get('id')
+                quantity = data.get('quantity', 1)
 
-        # Создаем новый заказ
-        order = Order(table_number=table_number, status="в ожидании")
-        order.save()  # Сохраняем заказ, чтобы получить его ID
+                try:
+                    item = Items.objects.get(id=item_id)
+                except Items.DoesNotExist:
+                    return Response({"error": f"Блюдо с ID {item_id} не найдено."}, status=status.HTTP_404_NOT_FOUND)
 
-        total_price = 0  # Счетчик общей стоимости
-        items_list = []  # Список для хранения блюд и количеств
+                total_price += item.price * quantity
+                items_list.append({'id': item.id, 'name': item.name, 'price': item.price, 'quantity': quantity})  # Сохраняем данные, как они есть в Item
 
-        # Обрабатываем каждое блюдо
-        for data in items_data:
-            item_id = data.get('id')  # ID блюда
-            quantity = data.get('quantity', 1)  # Количество, по умолчанию 1
+            order = Order.objects.create(
+                table_number=table_number,
+                status="в ожидании",  # Или другое значение по умолчанию
+                items=items_list,
+                total_price=total_price
+            )
 
-            # Получаем блюдо из базы данных
-            try:
-                item = Items.objects.get(id=item_id)
-            except Items.DoesNotExist:
-                return Response({"error": f"Блюдо с ID {item_id} не найдено."}, status=status.HTTP_404_NOT_FOUND)
-
-            # Увеличиваем общую стоимость
-            total_price += item.price * quantity
-            items_list.append({'id': item_id, 'quantity': quantity})  # Добавляем информацию о блюде в список
-
-        # Сохраняем данные о блюдах в JSONField
-        order.items = items_list
-        order.total_price = total_price
-        order.save()  # Сохраняем заказ с обновленной стоимостью и данными о блюдах
-
-        # Сериализуем и возвращаем данные нового заказа
-        serializer = self.get_serializer(order)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer = OrderSerializer(order)  # Используем полный OrderSerializer для ответа
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # Возвращаем ошибки сериализатора
 
     def update(self, request, table_number=None):
         try:
-            order = self.get_object(table_number)  # Получаем объект заказа по номеру стола
+            order = self.get_object()  # Получаем объект заказа по номеру стола
         except Order.DoesNotExist:
             return Response({"error": "Заказ не найден."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -147,14 +136,18 @@ class RevenueView(APIView):
         return Response({'total_revenue': total_revenue})
 
 
+# class ApiRoot(APIView):
+#     """ Корневая точка API.
+#     Возвращает ссылки на доступные конечные точки API, включая списки заказов, продуктов, выручки и документацию Swagger.
+#     """
+#     def get(self, request, format=None):
+#         return Response({
+#             'orders': reverse('order-list'),  # Ссылка на список заказов
+#             'items': reverse('product-list'),  # Ссылка на список блюд
+#             'revenue': reverse('revenue'),  # Ссылка на выручку
+#             'swagger': reverse('schema-swagger-ui'),  # Ссылка на Swagger документацию
+#         })
+
 class ApiRoot(APIView):
-    """ Корневая точка API.
-    Возвращает ссылки на доступные конечные точки API, включая списки заказов, продуктов, выручки и документацию Swagger.
-    """
-    def get(self, request, format=None):
-        return Response({
-            'orders': reverse('order-list'),  # Ссылка на список заказов
-            'items': reverse('product-list'),  # Ссылка на список блюд
-            'revenue': reverse('revenue'),  # Ссылка на выручку
-            'swagger': reverse('schema-swagger-ui'),  # Ссылка на Swagger документацию
-        })
+    def get(self, request, *args, **kwargs):
+        return render(request, 'api_root.html')

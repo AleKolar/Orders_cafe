@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-from .views import OrderViewSet, ItemsViewSet, RevenueView
+from .views import OrderViewSet, ItemsViewSet, RevenueView, ApiRoot
 
 router = DefaultRouter()
 router.register(r'orders', OrderViewSet, basename='order')  # Помним про - Регистрация OrderViewSet
@@ -23,4 +23,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('revenue/', RevenueView.as_view(), name='revenue'),  # Добавление маршрута для RevenueView ("Выручка")
+    path('', ApiRoot.as_view(), name='api-root'),
 ]

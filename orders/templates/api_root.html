@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Root</title>
+</head>
+<body>
+    <h1>Корневая точка API</h1>
+    <ul id="api-links"></ul>
+
+    <script>
+        // Эмулируем ответ от API
+        const apiResponse = {
+            "orders": "/api/orders/",
+            "items": "/api/products/",
+            "revenue": "/api/revenue/",
+            "swagger": "/api/swagger/"
+        };
+
+        // Получаем элемент списка, куда будем добавлять ссылки
+        const apiLinks = document.getElementById('api-links');
+
+        // Создаем интерактивные ссылки
+        for (const [key, value] of Object.entries(apiResponse)) {
+            const listItem = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = value; // Устанавливаем адрес ссылки
+            link.textContent = key; // Устанавливаем текст ссылки
+            link.target = "_blank"; // Открываем ссылку в новой вкладке
+
+            listItem.appendChild(link); // Добавляем ссылку в элемент списка
+            apiLinks.appendChild(listItem); // Добавляем элемент списка на страницу
+        }
+    </script>
+</body>
+</html>
