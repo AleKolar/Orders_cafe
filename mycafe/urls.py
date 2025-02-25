@@ -1,10 +1,12 @@
 # mycafe/urls.py
+from django.contrib import admin
 from django.urls import path, include
 
-from orders.views import ApiRoot
+from orders.views import ApiRoot  # Импортируем ApiRoot
 
 urlpatterns = [
-    path('', ApiRoot.as_view(), name='api-root'),
-    path('api/', include('orders.urls')),
+    path('admin/', admin.site.urls),
+    path('', ApiRoot.as_view(), name='api-root'),  # Корневой маршрут API
+    path('api/', include('orders.urls')),  # Включаем маршруты из orders.urls
 ]
 
