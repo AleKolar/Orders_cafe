@@ -4,21 +4,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum
 from django.urls import reverse
-from .models import Order, Items, OrderItems  # Убедитесь, что названия совпадают
-from .serializers import OrderSerializer, ItemsSerializer
-
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.db.models import Sum
-from django.urls import reverse
 from .models import Order, Items
 from .serializers import OrderSerializer, ItemsSerializer
 
 class OrderViewSet(viewsets.ModelViewSet):
     """ Управление заказами в системе """
-    queryset = Order.objects.all()  # Получаем все заказы
-    serializer_class = OrderSerializer  # Указываем сериализатор
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
 
     # Получение списка заказов
     def list(self, request):
@@ -51,7 +43,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = Order(table_number=table_number, status="в ожидании")
         order.save()  # Сохраняем заказ, чтобы получить его ID
 
-        total_price = 0  # Инициализируем общую стоимость
+        total_price = 0  # Счетчик общей стоимости
         items_list = []  # Список для хранения блюд и количеств
 
         # Обрабатываем каждое блюдо
@@ -88,11 +80,10 @@ class OrderViewSet(viewsets.ModelViewSet):
                                         order.table_number)  # Сохраняем старое значение, если новое не передано
         items_data = request.data.get('items')  # Ожидаем список блюд с количеством
 
-        # Удаляем старые записи, если передан новый список блюд
+        # Обновляем список блюд
         if items_data is not None:
-            order.orderitems_set.all().delete()  # Удаляем старые позиции заказа
-
-            total_price = 0  # Инициализируем общую стоимость
+            total_price = 0  # Счетчик общей стоимости
+            items_list = []  # Список для хранения обновленных позиций заказа
 
             # Пройдёмся по каждому блюду в новом списке
             for data in items_data:
@@ -105,14 +96,14 @@ class OrderViewSet(viewsets.ModelViewSet):
                 except Items.DoesNotExist:
                     return Response({"error": f"Блюдо с ID {item_id} не найдено."}, status=status.HTTP_404_NOT_FOUND)
 
-                # Создаем запись в промежуточной модели OrderItems
-                order_item = OrderItems(order=order, items=item, quantity=quantity)
-                order_item.save()
+                # Добавляем блюдо в список позиций заказа
+                items_list.append({"id": item.id, "name": item.name, "price": item.price, "quantity": quantity})
 
                 # Увеличиваем общую стоимость
                 total_price += item.price * quantity
 
-            # Устанавливаем общую стоимость заказа
+            # Устанавливаем обновленные значения в заказе
+            order.items = items_list
             order.total_price = total_price
 
         # Обновляем номер стола, если он передан
@@ -124,6 +115,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         # Сериализуем и возвращаем данные обновленного заказа
         serializer = OrderSerializer(order)
         return Response(serializer.data)
+
     # Удаление заказа по номеру стола
     def destroy(self, request, table_number=None):
         # Ищем заказ по номеру стола

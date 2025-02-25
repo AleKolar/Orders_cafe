@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.urls import path, include
 
-from orders.views import ApiRoot  # Импортируем ApiRoot
+from orders.views import ApiRoot
 
 urlpatterns = [
     path('admin/', admin.site.urls),
