@@ -18,10 +18,10 @@ class Order(models.Model):
     ]
 
     table_number = models.IntegerField()
-    items = models.ManyToManyField(Items, through='OrderItems')
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    items = models.JSONField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Добавляем поле для цены
 
     # def save(self, *args, **kwargs):
     #     total_price = 0
@@ -35,8 +35,4 @@ class Order(models.Model):
         self.total_price = total_price
         super().save(*args, **kwargs)
 
-class OrderItems(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    items = models.ForeignKey(Items, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
 

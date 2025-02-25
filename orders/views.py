@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum
 from django.urls import reverse
-from .models import Order, Items, OrderItems  # Убедитесь, что названия совпадают
+from .models import Order, Items
 from .serializers import OrderSerializer, ItemsSerializer
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -36,66 +36,74 @@ class OrderViewSet(viewsets.ModelViewSet):
     def create(self, request):
         # Извлекаем данные из запроса
         table_number = request.data.get('table_number')
-        items_data = request.data.get('items')  # Ожидаем список предметов с количеством
+        items_data = request.data.get('items')  # Ожидаем список блюд с количеством
+
+        # Проверяем валидность table_number
+        if not isinstance(table_number, int):
+            return Response({"error": "Номер стола должен быть целым числом."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Проверяем, что items_data не пустой
-        if not items_data:
-            return Response({"error": "Список блюд не может быть пустым."}, status=status.HTTP_400_BAD_REQUEST)
+        if not items_data or not isinstance(items_data, list):
+            return Response({"error": "Список блюд не может быть пустым и должен быть списком."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Создаем новый заказ
-        order = Order(table_number=table_number)
+        order = Order(table_number=table_number, status="в ожидании")
         order.save()  # Сохраняем заказ, чтобы получить его ID
 
         total_price = 0  # Инициализируем общую стоимость
+        items_list = []  # Список для хранения блюд и количеств
 
-        # Обрабатываем каждый предмет
+        # Обрабатываем каждое блюдо
         for data in items_data:
-            item_id = data.get('id')  # ID предмета
+            item_id = data.get('id')  # ID блюда
             quantity = data.get('quantity', 1)  # Количество, по умолчанию 1
 
-            # Получаем предмет из базы данных
+            # Получаем блюдо из базы данных
             try:
                 item = Items.objects.get(id=item_id)
             except Items.DoesNotExist:
-                return Response({"error": f"Предмет с ID {item_id} не найден."}, status=status.HTTP_404_NOT_FOUND)
-
-            # Создаем запись в промежуточной модели OrderItems
-            order_item = OrderItems(order=order, items=item, quantity=quantity)
-            order_item.save()
+                return Response({"error": f"Блюдо с ID {item_id} не найдено."}, status=status.HTTP_404_NOT_FOUND)
 
             # Увеличиваем общую стоимость
             total_price += item.price * quantity
+            items_list.append({'id': item_id, 'quantity': quantity})  # Добавляем информацию о блюде в список
 
-        # Устанавливаем общую стоимость заказа
+        # Сохраняем данные о блюдах в JSONField
+        order.items = items_list
         order.total_price = total_price
-        order.save()  # Сохраняем заказ с обновленной стоимостью
+        order.save()  # Сохраняем заказ с обновленной стоимостью и данными о блюдах
 
         # Сериализуем и возвращаем данные нового заказа
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    # Обновление существующего заказа
-    def update(self, request, pk=None):
-        order = self.get_object()
-        table_number = request.data.get('table_number', order.table_number)  # Сохраняем старое значение, если новое не передано
-        items_data = request.data.get('items')  # Ожидаем список предметов с количеством
+    def update(self, request, table_number=None):
+        try:
+            order = self.get_object(table_number)  # Получаем объект заказа по номеру стола
+        except Order.DoesNotExist:
+            return Response({"error": "Заказ не найден."}, status=status.HTTP_404_NOT_FOUND)
 
-        if items_data is not None:  # Если передан новый список блюд
-            # Удаляем старые записи
-            order.orderitems_set.all().delete()
+        table_number = request.data.get('table_number',
+                                        order.table_number)  # Сохраняем старое значение, если новое не передано
+        items_data = request.data.get('items')  # Ожидаем список блюд с количеством
+
+        # Удаляем старые записи, если передан новый список блюд
+        if items_data is not None:
+            order.orderitems_set.all().delete()  # Удаляем старые позиции заказа
 
             total_price = 0  # Инициализируем общую стоимость
 
-            # Обрабатываем каждый предмет
+            # Пройдёмся по каждому блюду в новом списке
             for data in items_data:
-                item_id = data.get('id')  # ID предмета
+                item_id = data.get('id')  # ID блюда
                 quantity = data.get('quantity', 1)  # Количество, по умолчанию 1
 
-                # Получаем предмет из базы данных
+                # Получаем блюдо из базы данных
                 try:
                     item = Items.objects.get(id=item_id)
                 except Items.DoesNotExist:
-                    return Response({"error": f"Предмет с ID {item_id} не найден."}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({"error": f"Блюдо с ID {item_id} не найдено."}, status=status.HTTP_404_NOT_FOUND)
 
                 # Создаем запись в промежуточной модели OrderItems
                 order_item = OrderItems(order=order, items=item, quantity=quantity)
@@ -114,9 +122,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         order.save()  # Сохраняем обновленный заказ
 
         # Сериализуем и возвращаем данные обновленного заказа
-        serializer = self.get_serializer(order)
+        serializer = OrderSerializer(order)
         return Response(serializer.data)
-
     # Удаление заказа по номеру стола
     def destroy(self, request, table_number=None):
         # Ищем заказ по номеру стола
