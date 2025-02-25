@@ -1,4 +1,5 @@
-from rest_framework import serializers  
+# serializers.py
+from rest_framework import serializers
 from .models import Order, Items
 
 

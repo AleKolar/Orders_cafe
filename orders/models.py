@@ -1,7 +1,7 @@
-from django.db import models  
-
 # models.py
 from django.db import models
+
+''' Определяем модели и их поля, что будем использовать при обработке заказов '''
 
 class Items(models.Model):
     name = models.CharField(max_length=255)
@@ -23,12 +23,6 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Добавляем поле для цены
 
-    # def save(self, *args, **kwargs):
-    #     total_price = 0
-    #     for order_items in self.orderproduct_set.all():
-    #         total_price += order_items.product.price * order_items.quantity
-    #     self.total_price = total_price
-    #     super().save(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         total_price = sum(order_product.product.price * order_product.quantity for order_product in self.orderproduct_set.all())
