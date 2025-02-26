@@ -12,11 +12,9 @@ class Items(models.Model):
     def __str__(self):
         return self.name
 
-class Order(models.Model):
+class Order(models.Model): # Использовать принципы ООП для построения модели Order:
     STATUS_CHOICES = [
-        ('pending', 'В ожидании'),
-        ('ready', 'Готово'),
-        ('paid', 'Оплачено'),
+        'pending', 'ready', 'paid',
     ]
 
     table_number = models.IntegerField()
@@ -26,7 +24,8 @@ class Order(models.Model):
     total_price = models.FloatField(default=0.0)
 
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs): # принцип полиморфизма. Метод save() переопределяется (override)
+        # , изменяя поведение сохранения объекта. Теперь вычисляется total_price перед сохранением объекта в БД.
         total_price = 0.0
         for item in self.items:
             # Получаем цену блюда по имени
@@ -40,12 +39,6 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
 
-    # def change_status(self, new_status):
-    #     if new_status in dict(self.STATUS_CHOICES):
-    #         self.status = new_status
-    #         self.save()
-    #         if new_status == 'paid':
-    #             self.calculate_revenue()
 
 
 
