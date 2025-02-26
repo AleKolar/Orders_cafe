@@ -1,11 +1,14 @@
 # orders/views.py
-from rest_framework import viewsets, status
+from unittest.mock import patch
+
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum, Q
 from django.shortcuts import render
 from .models import Order, Items
-from .serializers import OrderSerializer, ItemsSerializer, OrderCreateSerializer, ItemsSerializerProducts
+from .serializers import OrderSerializer, ItemsSerializer, OrderCreateSerializer, ItemsSerializerProducts, \
+    OrderStatusUpdateSerializer
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -20,7 +23,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     # Получение конкретного заказа по его ID
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request, pk=id):
         order = self.get_object()
         serializer = self.get_serializer(order)
         return Response(serializer.data)
@@ -49,23 +52,23 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             order = Order.objects.create(
                 table_number=table_number,
-                status="в ожидании",  # Или другое значение по умолчанию
+                status="в ожидании", # Или другое значение по умолчанию
                 items=items_list,
                 total_price=total_price
             )
 
-            serializer = OrderSerializer(order)  # Используем полный OrderSerializer для ответа
+            serializer = OrderCreateSerializer(order) # OrderSerializer(order)  # Используем полный OrderSerializer для ответа
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # Возвращаем ошибки сериализатора
 
-    def update(self, request, pk=None, partial=False):
+    def update(self, request, pk=id, partial=True):
         try:
-            order = self.get_object()  # Получаем объект заказа по первичному ключу (pk)
+            order = self.get_object()  # Получаем объект заказа
         except Order.DoesNotExist:
             return Response({"error": "Заказ не найден."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Обновляем номер стола, если он передан
+        # Обновляем номер стола, если он передан
         table_number = request.data.get('table_number')
         if table_number is not None:
             order.table_number = table_number
@@ -109,7 +112,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             # Получаем заказы по номеру стола с помощью filter и Q для фильтрации по нескольким статусам
         orders = Order.objects.filter(
-            Q(table_number=table_number) & (Q(status='pending') | Q(status='paid') | Q(status='ready'))
+            Q(table_number=table_number) & (Q(status='в ожидании') | Q(status='paid') | Q(status='ready'))
         )
 
         # Проверяем, есть ли заказы
@@ -133,6 +136,23 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "Заказ с данным номером стола не найден."}, status=status.HTTP_404_NOT_FOUND)
 
 
+class OrderUpdateStatusView(APIView):
+    """Изменение статуса заказа"""
+
+    def update_status(self, request, id):
+        try:
+            order = Order.objects.get(id=id)
+        except Order.DoesNotExist:
+            return Response({'error': 'Заказ не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()  # Сохраняем обновленный статус
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class ItemViewSet(viewsets.ModelViewSet):
     """ Блюда: добавление блюд и цен на них """
     queryset = Items.objects.all()  # Правильный класс
@@ -148,10 +168,11 @@ class ItemViewSet(viewsets.ModelViewSet):
 class RevenueView(APIView):
     """ Вычисление выручки от оплаченных заказов """
     def get(self, request):
-        total_revenue_result = Order.objects.filter(status='paid').aggregate(Sum('total_price'))
+        # Вычисляем общую выручку от оплаченных заказов
+        total_revenue_result = Order.objects.filter(status='paid').aggregate(total_revenue=Sum('total_price'))
 
-        # Получаем значение, если оно существует, иначе используем 0
-        total_revenue = total_revenue_result.get('total_price', 0) or 0
+        # Получаем значение выручки, если оно существует, иначе используем 0
+        total_revenue = total_revenue_result.get('total_revenue', 0) or 0
 
         return Response({'total_revenue': total_revenue})
 

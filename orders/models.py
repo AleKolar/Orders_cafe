@@ -20,7 +20,7 @@ class Order(models.Model):
 
     table_number = models.IntegerField()
     items = models.JSONField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=40, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     total_price = models.FloatField(default=0.0)
 

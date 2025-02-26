@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -31,6 +31,132 @@
 
             listItem.appendChild(link); // Добавляем ссылку в элемент списка
             apiLinks.appendChild(listItem); // Добавляем элемент списка на страницу
+        }
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корневая точка API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #444;
+            text-align: center;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #007bff;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        a:hover {
+            background-color: #c8d9ed;
+        }
+        #status-update {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Корневая точка API</h1>
+    <ul id="api-links"></ul>
+
+    <div id="status-update">
+        <h2>Изменить статус заказа</h2>
+        <input type="text" id="order-id" placeholder="Введите ID заказа">
+        <select id="order-status">
+            <option value="в ожидании">В ожидании</option>
+            <option value="готово">Готово</option>
+            <option value="paid">Оплачено</option>
+        </select>
+        <button id="update-status-button">Изменить статус</button>
+        <p id="status-message"></p>
+    </div>
+
+    <script>
+        // Эмулируем ответ от API
+        const apiResponse = {
+            "orders": "/api/orders/",
+            "items": "/api/products/",
+            "revenue": "/api/revenue/",
+            "swagger": "/api/swagger/"
+        };
+
+        // Получаем элемент списка, куда будем добавлять ссылки
+        const apiLinks = document.getElementById('api-links');
+
+        // Создаем интерактивные ссылки
+        for (const [key, value] of Object.entries(apiResponse)) {
+            const listItem = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = value; // Устанавливаем адрес ссылки
+            link.textContent = key; // Устанавливаем текст ссылки
+            link.target = "_blank"; // Открываем ссылку в новой вкладке
+
+            listItem.appendChild(link); // Добавляем ссылку в элемент списка
+            apiLinks.appendChild(listItem); // Добавляем элемент списка на страницу
+        }
+
+        // Функциональность изменения статуса заказа
+        document.getElementById('update-status-button').addEventListener('click', () => {
+            const orderId = document.getElementById('order-id').value;
+            const status = document.getElementById('order-status').value;
+
+            fetch(`/api/orders/update_status/${orderId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'), // Получение CSRF токена, если вы используете Django
+                },
+                body: JSON.stringify({ status })
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('status-message').textContent = 'Статус заказа обновлен успешно';
+                } else {
+                    document.getElementById('status-message').textContent = 'Ошибка обновления статуса';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                document.getElementById('status-message').textContent = 'Ошибка сети или сервера';
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
     </script>
 </body>
