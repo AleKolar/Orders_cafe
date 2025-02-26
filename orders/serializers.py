@@ -14,9 +14,16 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['table_number', 'items']
 
-
-
 class ItemsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Items
-        fields = '__all__'
+        fields = ['name', 'price', 'quantity']
+
+class ItemsSerializerProducts(serializers.ModelSerializer):
+    price = serializers.DecimalField(
+        max_digits=10, decimal_places=2, coerce_to_string=True
+    )
+
+    class Meta:
+        model = Items
+        fields = ['name', 'price']

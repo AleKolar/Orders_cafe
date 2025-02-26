@@ -2,10 +2,10 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.shortcuts import render
 from .models import Order, Items
-from .serializers import OrderSerializer, ItemsSerializer, OrderCreateSerializer
+from .serializers import OrderSerializer, ItemsSerializer, OrderCreateSerializer, ItemsSerializerProducts
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -59,53 +59,70 @@ class OrderViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # Возвращаем ошибки сериализатора
 
-    def update(self, request, table_number=None):
+    def update(self, request, pk=None, partial=False):
         try:
-            order = self.get_object()  # Получаем объект заказа по номеру стола
+            order = self.get_object()  # Получаем объект заказа по первичному ключу (pk)
         except Order.DoesNotExist:
             return Response({"error": "Заказ не найден."}, status=status.HTTP_404_NOT_FOUND)
 
-        table_number = request.data.get('table_number',
-                                        order.table_number)  # Сохраняем старое значение, если новое не передано
-        items_data = request.data.get('items')  # Ожидаем список блюд с количеством
+            # Обновляем номер стола, если он передан
+        table_number = request.data.get('table_number')
+        if table_number is not None:
+            order.table_number = table_number
 
-        # Обновляем список блюд
+            # Обновляем статус заказа, если он передан
+        status_value = request.data.get('status')
+        if status_value is not None:
+            order.status = status_value  # Обновляем статус заказа
+
+        # Обновляем блюда заказа, если они переданы
+        items_data = request.data.get('items')
         if items_data is not None:
-            total_price = 0  # Счетчик общей стоимости
-            items_list = []  # Список для хранения обновленных позиций заказа
+            total_price = 0
+            items_list = []
 
-            # Пройдёмся по каждому блюду в новом списке
-            for data in items_data:
-                item_id = data.get('id')  # ID блюда
-                quantity = data.get('quantity', 1)  # Количество, по умолчанию 1
-
-                # Получаем блюдо из базы данных
+            for item_data in items_data:
+                item_id = item_data.get('id')
+                quantity = item_data.get('quantity', 1)
                 try:
                     item = Items.objects.get(id=item_id)
                 except Items.DoesNotExist:
                     return Response({"error": f"Блюдо с ID {item_id} не найдено."}, status=status.HTTP_404_NOT_FOUND)
 
-                # Добавляем блюдо в список позиций заказа
+                    # Добавляем блюда в список и считаем общую стоимость
                 items_list.append({"id": item.id, "name": item.name, "price": item.price, "quantity": quantity})
-
-                # Увеличиваем общую стоимость
                 total_price += item.price * quantity
 
-            # Устанавливаем обновленные значения в заказе
+                # Обновляем список предметов и общую стоимость заказа
             order.items = items_list
             order.total_price = total_price
 
-        # Обновляем номер стола, если он передан
-        if table_number is not None:
-            order.table_number = table_number
+        order.save()  # Сохраняем изменения
 
-        order.save()  # Сохраняем обновленный заказ
-
-        # Сериализуем и возвращаем данные обновленного заказа
-        serializer = OrderSerializer(order)
+        # Сериализуем и возвращаем обновленный заказ
+        serializer = self.get_serializer(order)
         return Response(serializer.data)
 
-    # Удаление заказа по номеру стола
+    def get_bill(self, request, table_number=None):
+        if table_number is None:
+            return Response({"error": "Необходимо указать номер стола."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Получаем заказы по номеру стола с помощью filter и Q для фильтрации по нескольким статусам
+        orders = Order.objects.filter(
+            Q(table_number=table_number) & (Q(status='pending') | Q(status='paid') | Q(status='ready'))
+        )
+
+        # Проверяем, есть ли заказы
+        if not orders.exists():
+            return Response({"error": "Заказов для этого номера стола не найдено."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Считаем общую сумму
+        total_bill = sum(order.total_price for order in orders)
+
+        # Возвращаем результат
+        return Response({"table_number": table_number, "total_bill": total_bill})
+
+        # Удаление заказа по номеру стола
     def destroy(self, request, table_number=None):
         # Ищем заказ по номеру стола
         try:
@@ -116,10 +133,10 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "Заказ с данным номером стола не найден."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class ItemsViewSet(viewsets.ModelViewSet):
+class ItemViewSet(viewsets.ModelViewSet):
     """ Блюда: добавление блюд и цен на них """
     queryset = Items.objects.all()  # Правильный класс
-    serializer_class = ItemsSerializer  # Правильный сериализатор
+    serializer_class = ItemsSerializerProducts  # Правильный сериализатор
 
     # Создание/Добавление нового блюда и цены на него
     def create(self, request):
@@ -128,13 +145,15 @@ class ItemsViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
 class RevenueView(APIView):
     """ Вычисление выручки от оплаченных заказов """
     def get(self, request):
-        total_revenue = Order.objects.filter(status='paid').aggregate(Sum('total_price'))['total_price'] or 0  # Считаем общую выручку
-        return Response({'total_revenue': total_revenue})
+        total_revenue_result = Order.objects.filter(status='paid').aggregate(Sum('total_price'))
 
+        # Получаем значение, если оно существует, иначе используем 0
+        total_revenue = total_revenue_result.get('total_price', 0) or 0
+
+        return Response({'total_revenue': total_revenue})
 
 # class ApiRoot(APIView):
 #     """ Корневая точка API.
