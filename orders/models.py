@@ -13,8 +13,10 @@ class Items(models.Model):
         return self.name
 
 class Order(models.Model): # Использовать принципы ООП для построения модели Order:
-    STATUS_CHOICES = [
-        'pending', 'ready', 'paid',
+    STATUS_CHOICES = STATUS_CHOICES = [
+        ('pending', 'В ожидании'),
+        ('ready', 'Готово'),
+        ('paid', 'Оплачено'),
     ]
 
     table_number = models.IntegerField()

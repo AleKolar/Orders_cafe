@@ -220,5 +220,6 @@ class OrderListView(generics.ListAPIView):
     filterset_class = OrderFilter
 
 class ApiRoot(APIView):
+    """ Пользовательский интерфейс """
     def get(self, request, *args, **kwargs):
         return render(request, 'api_root.html')
