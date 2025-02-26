@@ -136,12 +136,14 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "Заказ с данным номером стола не найден."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class OrderUpdateStatusView(APIView):
+class OrderUpdateStatusView(viewsets.ModelViewSet):
     """Изменение статуса заказа"""
+    serializer_class = OrderStatusUpdateSerializer  # Добавляем serializer_class
+    queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet
 
     def update_status(self, request, id):
         try:
-            order = Order.objects.get(id=id)
+            order = Order.objects.get(pk=id)
         except Order.DoesNotExist:
             return Response({'error': 'Заказ не найден'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -152,6 +154,26 @@ class OrderUpdateStatusView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OrderUpdateStatusAPIView(APIView):
+    """Изменение статуса заказа"""
+    serializer_class = OrderStatusUpdateSerializer  # Добавляем serializer_class
+    queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet
+
+    def update_status_api(self, request, id):
+        try:
+            order = Order.objects.get(pk=id)
+        except Order.DoesNotExist:
+            return Response({'error': 'Заказ не найден'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()  # Сохраняем обновленный статус
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ItemViewSet(viewsets.ModelViewSet):
     """ Блюда: добавление блюд и цен на них """
