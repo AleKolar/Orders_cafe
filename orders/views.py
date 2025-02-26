@@ -1,14 +1,16 @@
 # orders/views.py
-from unittest.mock import patch
-
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Sum, Q
 from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
+
+from .filters import OrderFilter
 from .models import Order, Items
-from .serializers import OrderSerializer, ItemsSerializer, OrderCreateSerializer, ItemsSerializerProducts, \
+from .serializers import OrderSerializer, OrderCreateSerializer, ItemsSerializerProducts, \
     OrderStatusUpdateSerializer
+
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -138,8 +140,8 @@ class OrderViewSet(viewsets.ModelViewSet):
 
 class OrderUpdateStatusView(viewsets.ModelViewSet):
     """Изменение статуса заказа"""
-    serializer_class = OrderStatusUpdateSerializer  # Добавляем serializer_class
-    queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet
+    serializer_class = OrderStatusUpdateSerializer  # serializer_class
+    queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet !!!
 
     def update_status(self, request, id):
         try:
@@ -157,8 +159,8 @@ class OrderUpdateStatusView(viewsets.ModelViewSet):
 
 class OrderUpdateStatusAPIView(APIView):
     """Изменение статуса заказа"""
-    serializer_class = OrderStatusUpdateSerializer  # Добавляем serializer_class
-    queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet
+    serializer_class = OrderStatusUpdateSerializer  # serializer_class
+    queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet !!!
 
     def update_status_api(self, request, id):
         try:
@@ -209,6 +211,13 @@ class RevenueView(APIView):
 #             'revenue': reverse('revenue'),  # Ссылка на выручку
 #             'swagger': reverse('schema-swagger-ui'),  # Ссылка на Swagger документацию
 #         })
+
+class OrderListView(generics.ListAPIView):
+    """ Поиск по заданным параметрам """
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    filter_backends = [DjangoFilterBackend] # DjangoRestFramework предоставляет DjangoFilterBackend для фильтрации
+    filterset_class = OrderFilter
 
 class ApiRoot(APIView):
     def get(self, request, *args, **kwargs):

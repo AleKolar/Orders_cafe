@@ -33,6 +33,11 @@ class ItemsSerializerProducts(serializers.ModelSerializer):
         fields = ['name', 'price']
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    status = serializers.ChoiceField(choices=[
+        ('pending', 'В ожидании'),
+        ('ready', 'Готово'),
+        ('paid', 'Оплачено'),
+    ])
     class Meta:
         model = Order
         fields = ['status', 'table_number', 'id']

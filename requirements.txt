@@ -16,3 +16,4 @@ PyYAML==6.0.2
 pytz==2025.1
 inflection==0.5.1
 packaging==24.2
+django-filter==24.3

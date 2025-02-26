@@ -1,6 +1,7 @@
 # models.py
 from django.db import models
 
+
 ''' Определяем модели и их поля, что будем использовать при обработке заказов '''
 
 class Items(models.Model):
@@ -37,6 +38,7 @@ class Order(models.Model):
                 continue
         self.total_price = total_price
         super().save(*args, **kwargs)
+
 
     # def change_status(self, new_status):
     #     if new_status in dict(self.STATUS_CHOICES):
