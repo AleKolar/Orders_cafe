@@ -126,10 +126,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response({"table_number": table_number, "total_bill": total_bill})
 
         # Удаление заказа по номеру стола
-    def destroy(self, request, table_number=None):
+    def destroy(self, request, pk=id):
         # Ищем заказ по номеру стола
         try:
-            order = Order.objects.get(table_number=table_number)
+            order = Order.objects.get(id=pk)
             order.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Order.DoesNotExist:
