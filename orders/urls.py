@@ -31,5 +31,15 @@ urlpatterns = [
 
     path('orders/search', OrderListView.as_view(), name='search'),
 
-    path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order')
+    # URLS ДЛЯ ТЕСТОВ
+
+    path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
+
+    path('api/products/', ItemViewSet.as_view({'post': 'create'}), name='api_products_create'),
+
+    path('api/orders/<int:id>', OrderViewSet.as_view({'delete': 'destroy'}), name='api_orders_delete'),
+
+    path('api/orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='api_orders_update_status'),
+
+
 ]

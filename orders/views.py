@@ -111,19 +111,15 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_bill(self, request, table_number=None):
         if table_number is None:
             return Response({"error": "Необходимо указать номер стола."}, status=status.HTTP_400_BAD_REQUEST)
-
             # Получаем заказы по номеру стола с помощью filter и Q для фильтрации по нескольким статусам
         orders = Order.objects.filter(
             Q(table_number=table_number) & (Q(status='в ожидании') | Q(status='paid') | Q(status='ready'))
         )
-
         # Проверяем, есть ли заказы
         if not orders.exists():
             return Response({"error": "Заказов для этого номера стола не найдено."}, status=status.HTTP_404_NOT_FOUND)
-
             # Считаем общую сумму
         total_bill = sum(order.total_price for order in orders)
-
         # Возвращаем результат
         return Response({"table_number": table_number, "total_bill": total_bill})
 

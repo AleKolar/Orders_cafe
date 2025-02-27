@@ -29,16 +29,17 @@ class Order(models.Model): # Использовать принципы ООП д
     def save(self, *args, **kwargs): # принцип полиморфизма. Метод save() переопределяется (override)
         # , изменяя поведение сохранения объекта. Теперь вычисляется total_price перед сохранением объекта в БД.
         total_price = 0.0
-        for item in self.items:
-            # Получаем цену блюда по имени
-            try:
-                item_instance = Items.objects.get(name=item['name'])
-                total_price += item_instance.price * item['quantity']
-            except Items.DoesNotExist:
-                # Обработка случая, когда блюдо не найдено
-                continue
-        self.total_price = total_price
-        super().save(*args, **kwargs)
+        if self.items is not None:
+            for item in self.items:
+                # Получаем цену блюда по имени
+                try:
+                    item_instance = Items.objects.get(name=item['name'])
+                    total_price += item_instance.price * item['quantity']
+                except Items.DoesNotExist:
+                    # Обработка случая, когда блюдо не найдено
+                    continue
+            self.total_price = total_price
+            super().save(*args, **kwargs)
 
 
 
