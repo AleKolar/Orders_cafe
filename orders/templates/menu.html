@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заказ для стола</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Подключение внешнего CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>Заказ стола</h1>
@@ -35,7 +35,7 @@
     <h2>Ваш заказ:</h2>
     <ul id="orders-list"></ul>
     <p id="total-price">Итоговая цена: 0 рублей</p>
-    <button id="pay-button" disabled>Оплатить</button>
+    <button id="pay-button" disabled>Создать заказ</button>
     <p id="status-message"></p>
 
     <script>
@@ -103,7 +103,7 @@
         }
 
         // Отправка данных на сервер
-        fetch('/orders/create/', {
+        fetch('orders/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

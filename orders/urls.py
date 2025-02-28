@@ -31,7 +31,7 @@ urlpatterns = [
 
     # URLS ДЛЯ ТЕСТОВ
 
-    path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
+    path('create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
 
     path('products/', ItemViewSet.as_view({'post': 'create'}), name='api_products_create'),
 

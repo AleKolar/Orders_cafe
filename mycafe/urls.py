@@ -18,7 +18,7 @@ urlpatterns = [
 
     path('menu/', menu, name='menu'), # Пользовательский интерфейс
 
-    #path('orders/', OrderViewSet.as_view({'post': 'create'}), name='create_order'), #
+    path('menu/orders/', OrderViewSet.as_view({'post': 'create'}), name='create_order'), #
 
 
 ]
