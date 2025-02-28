@@ -25,11 +25,9 @@ urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('revenue/', RevenueView.as_view(), name='revenue'),  # Добавление маршрута для RevenueView ("Выручка")
     path('orders/bill/<int:table_number>/', OrderViewSet.as_view({'get': 'get_bill'}), name='get_bill'), # Добавление маршрута для "Счёт" со стола
-    path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),# Обновление из Swagger
     path('', ApiRoot.as_view(), name='api-root'),
 
-    # path('orders/search', OrderListView.as_view(), name='search'),
-    # path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
+
 
     # URLS ДЛЯ ТЕСТОВ
 
@@ -37,7 +35,7 @@ urlpatterns = [
 
     path('products/', ItemViewSet.as_view({'post': 'create'}), name='api_products_create'),
 
-    path('orders/<int:id>', OrderViewSet.as_view({'delete': 'destroy'}), name='api_orders_delete'),
+    path('orders/<int:pk>', OrderViewSet.as_view({'delete': 'destroy'}), name='api_orders_delete'),
 
     path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),
 

@@ -136,8 +136,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response({"table_number": table_number, "total_bill": total_bill})
 
         # Удаление заказа по номеру стола
-    def destroy(self, request, pk=id):
-        # Ищем заказ по номеру стола
+    def destroy(self, request, pk):
         try:
             order = Order.objects.get(id=pk)
             order.delete()
