@@ -67,7 +67,7 @@ class OrderAPITestCase(APITestCase):
     def test_update_order_status(self):
         # Создаем предварительный заказ
         order = Order.objects.create(table_number=1, items=[{"name": self.item1.name, "quantity": 2},], status='paid', total_price=1000)
-        url = reverse('api_orders_update_status', args=[order.id])
+        url = reverse('update_status', args=[order.id])
         data = {'status': 'paid'}  # Обновляем статус на допустимый
         response = self.client.patch(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

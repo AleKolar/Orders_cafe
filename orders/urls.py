@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-from .views import OrderViewSet, ItemViewSet, RevenueView, ApiRoot, OrderUpdateStatusView, OrderUpdateStatusAPIView, \
+from .views import OrderViewSet, ItemViewSet, RevenueView, ApiRoot, OrderUpdateStatusView, \
     OrderListView
 
 router = DefaultRouter()
@@ -33,13 +33,13 @@ urlpatterns = [
 
     # URLS ДЛЯ ТЕСТОВ
 
-    # path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
-    #
-    # path('products/', ItemViewSet.as_view({'post': 'create'}), name='api_products_create'),
-    #
-    # path('orders/<int:id>', OrderViewSet.as_view({'delete': 'destroy'}), name='api_orders_delete'),
-    #
-    # path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),
+    path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
+
+    path('products/', ItemViewSet.as_view({'post': 'create'}), name='api_products_create'),
+
+    path('orders/<int:id>', OrderViewSet.as_view({'delete': 'destroy'}), name='api_orders_delete'),
+
+    path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),
 
 
 

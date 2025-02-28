@@ -14,6 +14,17 @@ from .serializers import OrderSerializer, OrderCreateSerializer, ItemsSerializer
 
 
 
+def menu(request):
+    """ Меню это пользовательский интерфейс для создания заказа, который привязан к столу. Люди пришли сели за стол, /
+    выбрали номер своего стола сделали на этот номер заказ. Посмотрели цены, выбранные блюда, количество и итоговую сумму,/
+    если всё устраивает, оплатили !
+    """
+    items = Items.objects.all()
+    serializer = ItemsSerializerProducts(items, many=True)
+    return render(request, 'menu.html', {'items': serializer.data})
+
+""" Далее для 'кухни'/'администрации' у меня интерфейс API, точнее swagger - наглядно, удобно, понятно """
+
 class OrderViewSet(viewsets.ModelViewSet):
     """ Управление заказами в системе """
     queryset = Order.objects.all()
@@ -151,30 +162,6 @@ class OrderUpdateStatusView(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def menu(self, request):
-        items = Items.objects.all()
-        serializer = ItemsSerializerProducts(items, many=True)
-        return render(request, 'menu.html', {'items': serializer.data})
-
-
-
-
-
-class OrderUpdateStatusAPIView(APIView):
-    """Изменение статуса заказа"""
-    serializer_class = OrderStatusUpdateSerializer  # serializer_class
-    queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet !!!
-    def update_status(self, request, id):
-        try:
-            order = Order.objects.get(pk=id)
-        except Order.DoesNotExist:
-            return Response({'error': 'Заказ не найден'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()  # Сохраняем обновленный статус
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ItemViewSet(viewsets.ModelViewSet):
     """ Блюда: добавление блюд и цен на них """
@@ -239,9 +226,3 @@ class ApiRoot(APIView):
     """ Пользовательский интерфейс """
     def get(self, request, *args, **kwargs):
         return render(request, 'api_root.html')
-
-def range(request):
-    context = {
-        'iterator': range(1, 10)
-    }
-    return render(request, 'menu.html', context)
