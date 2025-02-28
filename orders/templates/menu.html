@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказ для стола</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Подключение внешнего CSS -->
+</head>
+<body>
+    <h1>Заказ стола</h1>
+
+    <h2>Выберите номер стола:</h2>
+    <select id="table-select">
+        <option value="" selected disabled>Выберите стол</option>
+        {% for i in '123456789' %}
+            <option value="{{ i }}">Стол {{ i }}</option>
+        {% endfor %}
+    </select>
+
+    <h2>Добавить блюдо:</h2>
+    <div>
+        <label for="dish-select">Выберите блюдо:</label>
+        <select id="dish-select">
+            {% for item in items %}
+                <option value="{{ item.name }}">{{ item.name }} ({{ item.price }} рублей)</option>
+            {% endfor %}
+        </select>
+
+        <label for="quantity-input">Количество:</label>
+        <input type="number" id="quantity-input" value="1" min="1" style="width: 50px;">
+
+        <button id="add-to-order">Добавить в заказ</button>
+    </div>
+
+    <h2>Ваш заказ:</h2>
+    <ul id="orders-list"></ul>
+    <p id="total-price">Итоговая цена: 0 рублей</p>
+    <button id="pay-button" disabled>Оплатить</button>
+    <p id="status-message"></p>
+
+    <script>
+    let totalPrice = 0;
+    let orderItems = [];
+    let tableNumber = ""; // Переменная для хранения номера стола
+
+    // Установка номера стола
+    document.getElementById('table-select').addEventListener('change', (event) => {
+        tableNumber = event.target.value; // Обновляем номер стола при выборе
+    });
+
+    // Добавление блюда в заказ
+    document.getElementById('add-to-order').addEventListener('click', () => {
+        // Проверка выбора номера стола
+        if (!tableNumber) {
+            alert('Выберите номер стола перед добавлением блюда!');
+            return;
+        }
+
+        const dishSelect = document.getElementById('dish-select');
+        const quantityInput = document.getElementById('quantity-input');
+
+        const itemId = dishSelect.value; // Сохраняем ID блюда
+        const itemName = dishSelect.selectedOptions[0].text.split('(')[0].trim(); // Получаем имя блюда
+        const itemPrice = parseFloat(dishSelect.selectedOptions[0].text.split('(')[1].split(' ')[0].replace(',', '.')); // Получаем цену
+        const quantity = parseInt(quantityInput.value, 10); // Получаем количество
+
+        // Проверка на уникальность блюда в заказе
+        const existingItem = orderItems.find(item => item.id === itemId);
+        if (existingItem) {
+            const newQuantity = existingItem.quantity + quantity;
+            existingItem.quantity = newQuantity; // Обновляем количество, если блюдо уже есть в заказе
+        } else {
+            orderItems.push({ id: itemId, name: itemName, price: itemPrice, quantity }); // Добавляем новое блюдо
+        }
+
+        // Обновление итоговой стоимости
+        totalPrice += itemPrice * quantity;
+
+        // Обновление списка заказов
+        updateOrderList();
+    });
+
+    // Обновление списка заказов
+    function updateOrderList() {
+        const orderList = document.getElementById('orders-list');
+        orderList.innerHTML = ''; // очищаем список
+
+        orderItems.forEach(item => {
+            const listItem = document.createElement('li');
+            listItem.innerText = `Блюдо: ${item.name}, Количество: ${item.quantity}, Цена: ${item.price * item.quantity} рублей`;
+            orderList.appendChild(listItem);
+        });
+
+        document.getElementById('total-price').innerText = `Итоговая цена: ${totalPrice.toFixed(2)} рублей`;
+        document.getElementById('pay-button').disabled = orderItems.length === 0; // Активируем/деактивируем кнопку
+    }
+
+    // Обработка нажатия кнопки оплаты
+    document.getElementById('pay-button').addEventListener('click', () => {
+        if (!tableNumber) {
+            alert('Выберите номер стола перед оплатой!');
+            return;
+        }
+
+        // Отправка данных на сервер
+        fetch('/orders/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                table_number: tableNumber,
+                items: orderItems,
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            const statusMessage = document.getElementById('status-message');
+            if (data.error) {
+                statusMessage.textContent = data.error;
+                statusMessage.style.color = 'red';
+            } else {
+                statusMessage.textContent = 'Оплачено! ID: ' + data.order;
+                statusMessage.style.color = 'green';
+                // Очистим заказ после создания
+                totalPrice = 0;
+                orderItems = [];
+                updateOrderList();
+                tableNumber = ""; // Сбрасываем номер стола
+                document.getElementById('table-select').selectedIndex = 0; // Сбрасываем выбор стола
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            const statusMessage = document.getElementById('status-message');
+            statusMessage.textContent = 'Ошибка сети или сервера';
+            statusMessage.style.color = 'red';
+        });
+    });
+    </script>
+
+</body>
+</html>
