@@ -23,6 +23,8 @@ urlpatterns = [
     path('search_orders_by_tables/', search_orders_by_tables, name='search_orders'),
     path('orders_by_tables/', OrderListView.as_view(), name='table_order_list'),
 
+    path('menu/', OrderUpdateStatusView.as_view({'get': 'menu'}), name='menu'),
+
 
 ]
 

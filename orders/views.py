@@ -59,11 +59,10 @@ class OrderViewSet(viewsets.ModelViewSet):
                 items=items_list,
                 total_price=total_price
             )
-
-            serializer = OrderCreateSerializer(order) # OrderSerializer(order)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer = OrderCreateSerializer(order)
+            return Response({"order": order.id, "total_price": order.total_price}, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # Возвращаем ошибки сериализатора
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, pk=id, partial=True):
         try:
@@ -152,6 +151,13 @@ class OrderUpdateStatusView(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def menu(self, request):
+        items = Items.objects.all()
+        serializer = ItemsSerializerProducts(items, many=True)
+        return render(request, 'menu.html', {'items': serializer.data})
+
+
+
 
 
 class OrderUpdateStatusAPIView(APIView):
@@ -233,3 +239,9 @@ class ApiRoot(APIView):
     """ Пользовательский интерфейс """
     def get(self, request, *args, **kwargs):
         return render(request, 'api_root.html')
+
+def range(request):
+    context = {
+        'iterator': range(1, 10)
+    }
+    return render(request, 'menu.html', context)

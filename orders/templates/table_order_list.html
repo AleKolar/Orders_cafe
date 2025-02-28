@@ -52,7 +52,7 @@
         {% for order in orders %}
             <li>
                 Заказ ID: {{ order.id }}<br>
-                Содержимое: {{order.items}}<br>
+                Блюда и цены: {{order.items}}<br>
                 Общая сумма: {{order.total_price}} рублей<br>
                 <button class="pay-button" data-id="{{ order.id }}">Оплатить</button>
                 <p class="status-message" id="status-message-{{ order.id }}"></p>
@@ -118,3 +118,4 @@
 
 </body>
 </html>
+
