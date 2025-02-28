@@ -36,12 +36,14 @@
     <ul id="orders-list"></ul>
     <p id="total-price">Итоговая цена: 0 рублей</p>
     <button id="pay-button" disabled>Создать заказ</button>
+    <button id="pay-status-button" disabled>Оплатить заказ</button>
     <p id="status-message"></p>
 
     <script>
     let totalPrice = 0;
     let orderItems = [];
     let tableNumber = ""; // Переменная для хранения номера стола
+    let orderId = null; // Временная переменная для хранения ID заказа
 
     // Установка номера стола
     document.getElementById('table-select').addEventListener('change', (event) => {
@@ -50,7 +52,6 @@
 
     // Добавление блюда в заказ
     document.getElementById('add-to-order').addEventListener('click', () => {
-        // Проверка выбора номера стола
         if (!tableNumber) {
             alert('Выберите номер стола перед добавлением блюда!');
             return;
@@ -95,10 +96,10 @@
         document.getElementById('pay-button').disabled = orderItems.length === 0; // Активируем/деактивируем кнопку
     }
 
-    // Обработка нажатия кнопки оплаты
+    // Обработка нажатия кнопки создания заказа
     document.getElementById('pay-button').addEventListener('click', () => {
         if (!tableNumber) {
-            alert('Выберите номер стола перед оплатой!');
+            alert('Выберите номер стола перед созданием заказа!');
             return;
         }
 
@@ -120,14 +121,56 @@
                 statusMessage.textContent = data.error;
                 statusMessage.style.color = 'red';
             } else {
-                statusMessage.textContent = 'Оплачено! ID: ' + data.order;
+                statusMessage.textContent = 'Заказ успешно создан! ID: ' + data.order;
                 statusMessage.style.color = 'green';
+                orderId = data.order; // Сохраняем ID заказа для дальнейшей оплаты
                 // Очистим заказ после создания
                 totalPrice = 0;
                 orderItems = [];
                 updateOrderList();
                 tableNumber = ""; // Сбрасываем номер стола
                 document.getElementById('table-select').selectedIndex = 0; // Сбрасываем выбор стола
+                document.getElementById('pay-status-button').disabled = false; // Активируем кнопку оплаты
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            const statusMessage = document.getElementById('status-message');
+            statusMessage.textContent = 'Ошибка сети или сервера';
+            statusMessage.style.color = 'red';
+        });
+    });
+
+    // Обработка нажатия кнопки оплаты
+    document.getElementById('pay-status-button').addEventListener('click', () => {
+        if (orderId === null) {
+            alert('Сначала создайте заказ для оплаты!');
+            return;
+        }
+
+        // Отправка запроса на обновление статуса
+        fetch(`orders/${orderId}/update_status/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'paid' }),  // Отправка нового статуса
+        })
+        .then(response => response.json())
+        .then(data => {
+            const statusMessage = document.getElementById('status-message');
+            if (data.error) {
+                statusMessage.textContent = data.error;
+                statusMessage.style.color = 'red';
+            } else {
+                // Проверяем, был ли статус успешно изменён
+                if (data.status === 'paid' || data.status === 'Оплачено') {
+                    statusMessage.textContent = 'Оплата произведена! Заказ ID: ' + orderId;
+                    statusMessage.style.color = 'green';
+                } else {
+                    statusMessage.textContent = 'Оплата уже произведена!';
+                    statusMessage.style.color = 'orange';
+                }
             }
         })
         .catch(error => {
@@ -138,6 +181,5 @@
         });
     });
     </script>
-
 </body>
 </html>

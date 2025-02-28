@@ -18,7 +18,8 @@ urlpatterns = [
 
     path('menu/', menu, name='menu'), # Пользовательский интерфейс
 
-    path('menu/orders/', OrderViewSet.as_view({'post': 'create'}), name='create_order'), #
+    path('menu/orders/', OrderViewSet.as_view({'post': 'create'}), name='create_order'), # Для работы пользовательского интерфейса
+    path('menu/orders/<int:id>/update_status/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'), # Для работы пользовательского интерфейса
 
 
 ]
