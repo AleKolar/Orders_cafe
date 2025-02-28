@@ -39,7 +39,7 @@ urlpatterns = [
 
     path('api/orders/<int:id>', OrderViewSet.as_view({'delete': 'destroy'}), name='api_orders_delete'),
 
-    path('api/orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='api_orders_update_status'),
+    path('api/orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),
 
 
 ]

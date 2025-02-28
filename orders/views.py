@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .filters import OrderFilter
+from .forms import TableSearchForm
 from .models import Order, Items
 from .serializers import OrderSerializer, OrderCreateSerializer, ItemsSerializerProducts, \
     OrderStatusUpdateSerializer
@@ -59,7 +60,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 total_price=total_price
             )
 
-            serializer = OrderCreateSerializer(order) # OrderSerializer(order)  # Используем полный OrderSerializer для ответа
+            serializer = OrderCreateSerializer(order) # OrderSerializer(order)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # Возвращаем ошибки сериализатора
@@ -108,6 +109,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(order)
         return Response(serializer.data)
 
+    # total_price заказа со стола (по номеру стола)
     def get_bill(self, request, table_number=None):
         if table_number is None:
             return Response({"error": "Необходимо указать номер стола."}, status=status.HTTP_400_BAD_REQUEST)
@@ -138,38 +140,33 @@ class OrderUpdateStatusView(viewsets.ModelViewSet):
     """Изменение статуса заказа"""
     serializer_class = OrderStatusUpdateSerializer  # serializer_class
     queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet !!!
-
     def update_status(self, request, id):
         try:
             order = Order.objects.get(pk=id)
         except Order.DoesNotExist:
             return Response({'error': 'Заказ не найден'}, status=status.HTTP_404_NOT_FOUND)
-
         serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
-
         if serializer.is_valid(raise_exception=True):
             serializer.save()  # Сохраняем обновленный статус
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+
 class OrderUpdateStatusAPIView(APIView):
     """Изменение статуса заказа"""
     serializer_class = OrderStatusUpdateSerializer  # serializer_class
     queryset = Order.objects.all()  # !!! Обязательно для ModelViewSet !!!
-
-    def update_status_api(self, request, id):
+    def update_status(self, request, id):
         try:
             order = Order.objects.get(pk=id)
         except Order.DoesNotExist:
             return Response({'error': 'Заказ не найден'}, status=status.HTTP_404_NOT_FOUND)
-
         serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
-
         if serializer.is_valid(raise_exception=True):
             serializer.save()  # Сохраняем обновленный статус
             return Response(serializer.data, status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -214,6 +211,23 @@ class OrderListView(generics.ListAPIView):
     serializer_class = OrderSerializer
     filter_backends = [DjangoFilterBackend] # DjangoRestFramework предоставляет DjangoFilterBackend для фильтрации
     filterset_class = OrderFilter
+
+
+def search_orders_by_tables(request):
+    if request.method == 'POST':
+        form = TableSearchForm(request.POST)
+        if form.is_valid():
+            table_number = form.cleaned_data['table_number']
+            orders = Order.objects.filter(table_number=table_number, status__in=['В ожидании', 'pending', 'Оплачено', 'paid', 'Готово', 'ready'])
+            total_bill = sum(order.total_price for order in orders)
+
+            return render(request, 'table_order_list.html',
+                          {'orders': orders, 'total_bill': total_bill, 'table_number': table_number})
+    else:
+        form = TableSearchForm()
+
+    return render(request, 'search_orders.html', {'form': form})
+
 
 class ApiRoot(APIView):
     """ Пользовательский интерфейс """

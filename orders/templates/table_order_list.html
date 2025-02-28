@@ -1,0 +1,120 @@
+<!-- order_list.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказы по столу {{ table_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #444;
+            text-align: center;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        button {
+            display: block;
+            padding: 10px 15px;
+            font-size: 16px;
+            color: #007bff;
+            background-color: #e9ecef;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #c8d9ed;
+        }
+        .status-message {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Заказы для стола {{ table_number }}</h1>
+
+{% if orders %}
+    <h2>Список заказов:</h2>
+    <ul>
+        {% for order in orders %}
+            <li>
+                Заказ ID: {{ order.id }}<br>
+                Содержимое: {{order.items}}<br>
+                Общая сумма: {{order.total_price}} рублей<br>
+                <button class="pay-button" data-id="{{ order.id }}">Оплатить</button>
+                <p class="status-message" id="status-message-{{ order.id }}"></p>
+            </li>
+        {% endfor %}
+    </ul>
+    <h3>Итого: {{ total_bill }} рублей</h3>
+{% else %}
+    <p>Заказов для этого номера стола не найдено.</p>
+{% endif %}
+
+<a href="{% url 'search_orders' %}">Новый поиск</a>
+
+<script>
+    document.querySelectorAll('.pay-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const orderId = button.getAttribute('data-id');
+            const statusUpdateUrl = `/api/orders/update_status/${orderId}/`;
+
+            fetch(statusUpdateUrl, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'), // CSRF токен, для Django
+                },
+                body: JSON.stringify({ status: 'paid' })
+            })
+            .then(response => {
+                const statusMessage = document.getElementById(`status-message-${orderId}`);
+                if (response.ok) {
+                    statusMessage.textContent = 'Статус заказа успешно обновлен на "Оплачено"';
+                    statusMessage.style.color = 'green';
+                    button.disabled = true; // Отключаем кнопку после успешного обновления
+                } else {
+                    statusMessage.textContent = 'Ошибка обновления статуса';
+                    statusMessage.style.color = 'red';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                const statusMessage = document.getElementById(`status-message-${orderId}`);
+                statusMessage.textContent = 'Ошибка сети или сервера';
+                statusMessage.style.color = 'red';
+            });
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+</body>
+</html>
