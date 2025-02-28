@@ -42,13 +42,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             items_list = []
 
             for data in items_data:
-                item_id = data.get('id')
+                item_name = data.get('name')
                 quantity = data.get('quantity', 1)
 
                 try:
-                    item = Items.objects.get(id=item_id)
+                    item = Items.objects.get(name=item_name)
                 except Items.DoesNotExist:
-                    return Response({"error": f"Блюдо с ID {item_id} не найдено."}, status=status.HTTP_404_NOT_FOUND)
+                    return Response({"error": f"Блюдо с ID {item_name} не найдено."}, status=status.HTTP_404_NOT_FOUND)
 
                 total_price += item.price * quantity
                 items_list.append({'id': item.id, 'name': item.name, 'price': item.price, 'quantity': quantity})  # Сохраняем данные, как они есть в Item

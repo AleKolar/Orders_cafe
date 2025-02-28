@@ -28,7 +28,8 @@ urlpatterns = [
     path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),# Обновление из Swagger
     path('', ApiRoot.as_view(), name='api-root'),
 
-    path('orders/search', OrderListView.as_view(), name='search'),
+    # path('orders/search', OrderListView.as_view(), name='search'),
+    # path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
 
     # URLS ДЛЯ ТЕСТОВ
 

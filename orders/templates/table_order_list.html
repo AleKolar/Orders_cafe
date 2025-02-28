@@ -1,4 +1,3 @@
-<!-- order_list.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -52,9 +51,10 @@
         {% for order in orders %}
             <li>
                 Заказ ID: {{ order.id }}<br>
-                Блюда и цены: {{order.items}}<br>
-                Общая сумма: {{order.total_price}} рублей<br>
-                <button class="pay-button" data-id="{{ order.id }}">Оплатить</button>
+                Блюда и цены: {{ order.items }}<br>
+                Общая сумма: {{ order.total_price }} рублей<br>
+                <span>Статус: {{ order.status }}</span><br>
+                <button class="pay-button" data-id="{{ order.id }}" data-status="{{ order.status }}">Оплатить</button>
                 <p class="status-message" id="status-message-{{ order.id }}"></p>
             </li>
         {% endfor %}
@@ -70,7 +70,16 @@
     document.querySelectorAll('.pay-button').forEach(button => {
         button.addEventListener('click', () => {
             const orderId = button.getAttribute('data-id');
+            const orderStatus = button.getAttribute('data-status'); // Получаем статус заказа
             const statusUpdateUrl = `/api/orders/update_status/${orderId}/`;
+
+            // Проверка статуса
+            if (orderStatus === 'paid') {
+                const statusMessage = document.getElementById(`status-message-${orderId}`);
+                statusMessage.textContent = 'Заказ уже оплачен';
+                statusMessage.style.color = 'orange';
+                return; // Прерываем выполнение, если заказ уже оплачен
+            }
 
             fetch(statusUpdateUrl, {
                 method: 'PATCH',
