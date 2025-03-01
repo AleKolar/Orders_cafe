@@ -165,12 +165,45 @@ class ItemViewSet(viewsets.ModelViewSet):
     queryset = Items.objects.all()  # Правильный класс
     serializer_class = ItemsSerializerProducts  # Правильный сериализатор
 
+    def list(self, request, *args, **kwargs):
+        # Вызываем родительский метод list и получаем результаты из Items(Блюда): name и price
+        queryset = self.get_queryset()
+        context = {'request': request}
+        serializer = self.get_serializer(queryset, many=True, context=context)
+        return Response(serializer.data)
+
     # Создание/Добавление нового блюда и цены на него
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # Удаление блюда
+    def destroy(self, request, *args, **kwargs):
+        try:
+            item = Items.objects.get(id=kwargs['pk'])
+            item.delete()
+        except Items.DoesNotExist:
+            return Response({"error": "Такого блюда нетю"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Обновление блюда
+    def update(self, request, *args, **kwargs):
+        item_id = kwargs.get('id')
+        try:
+            item = Items.objects.get(id=item_id)
+            # Обновляем поля таблицы Items(Блюда) в соответствии с переданными данными
+            item.name = request.data.get('name', item.name)
+            item.price = request.data.get('price', item.price)
+            item.save()
+        except Items.DoesNotExist:
+            return Response({'error': 'Item not found.'}, status=404)
+        except Items.MultipleObjectsReturned:
+            return Response({'error': 'Multiple items found.'}, status=400)
+
+        serializer = self.get_serializer(item)
+        return Response(serializer.data)
+
 
 class RevenueView(APIView):
     """ Вычисление выручки от оплаченных заказов """

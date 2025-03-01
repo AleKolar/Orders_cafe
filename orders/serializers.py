@@ -30,7 +30,7 @@ class ItemsSerializerProducts(serializers.ModelSerializer):
 
     class Meta:
         model = Items
-        fields = ['name', 'price']
+        fields = ['id', 'name', 'price']
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
     status = serializers.ChoiceField(choices=[

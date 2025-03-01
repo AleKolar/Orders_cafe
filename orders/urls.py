@@ -30,5 +30,4 @@ urlpatterns = [
     path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),
 
 
-
 ]

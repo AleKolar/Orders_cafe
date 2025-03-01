@@ -17,8 +17,10 @@ urlpatterns = [
     path('menu/', menu, name='menu'), # Пользовательский интерфейс
 
     path('menu/orders/', OrderViewSet.as_view({'post': 'create'}), name='create_order'), # Для работы пользовательского интерфейса
+
     path('menu/orders/<int:id>/update_status/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'), # Для работы пользовательского интерфейса
 
+    path('menu/products/delete/', ItemViewSet.as_view({'delete': 'destroy'}), name='api_products_delete'),
 
     path('orders/create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
 
@@ -29,6 +31,14 @@ urlpatterns = [
     path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),
 
     path('orders/search/', OrderListView.as_view(), name='search'),
+
+    path('item/products/delete/', ItemViewSet.as_view({'delete': 'destroy'}), name='api_products_delete'),
+
+    path('item/update/<int:id>/', ItemViewSet.as_view({'patch': 'update'}), name='api_products_update'),
+
+    path('item/list/', ItemViewSet.as_view({'get': 'list'}), name='api_products_list'),
+
+
 ]
 
 
