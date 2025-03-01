@@ -13,7 +13,6 @@ from .serializers import OrderSerializer, OrderCreateSerializer, ItemsSerializer
     OrderStatusUpdateSerializer
 
 
-
 def menu(request):
     """ Меню это пользовательский интерфейс для создания заказа, который привязан к столу. Люди пришли сели за стол, /
     выбрали номер своего стола сделали на этот номер заказ. Посмотрели цены, выбранные блюда, количество и итоговую сумму,/
@@ -23,14 +22,13 @@ def menu(request):
     serializer = ItemsSerializerProducts(items, many=True)
     return render(request, 'menu.html', {'items': serializer.data})
 
-
 class OrderViewSet(viewsets.ModelViewSet):
     """ Управление заказами в системе """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 
     # Получение списка заказов
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
