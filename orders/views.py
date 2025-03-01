@@ -23,7 +23,6 @@ def menu(request):
     serializer = ItemsSerializerProducts(items, many=True)
     return render(request, 'menu.html', {'items': serializer.data})
 
-""" Далее для 'кухни'/'администрации' у меня интерфейс API, точнее swagger - наглядно, удобно, понятно """
 
 class OrderViewSet(viewsets.ModelViewSet):
     """ Управление заказами в системе """
