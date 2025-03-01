@@ -4,42 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заказы по столу {{ table_number }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        h1 {
-            color: #444;
-            text-align: center;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            margin-bottom: 10px;
-        }
-        button {
-            display: block;
-            padding: 10px 15px;
-            font-size: 16px;
-            color: #007bff;
-            background-color: #e9ecef;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #c8d9ed;
-        }
-        .status-message {
-            margin-top: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -50,12 +15,13 @@
     <ul>
         {% for order in orders %}
             <li>
-                Заказ ID: {{ order.id }}<br>
-                Блюда и цены: {{ order.items }}<br>
-                Общая сумма: {{ order.total_price }} рублей<br>
-                <span>Статус: {{ order.status }}</span><br>
-                <button class="pay-button" data-id="{{ order.id }}" data-status="{{ order.status }}">Оплатить</button>
-                <p class="status-message" id="status-message-{{ order.id }}"></p>
+            Заказ ID: {{ order.id }}<br>
+            Блюда и цены: {{order.items}}<br>
+            Общая сумма: {{order.total_price}} рублей<br>
+            <span>Статус: {{ order.status }}</span><br>
+            <button class="pay-button" data-id="{{ order.id }}" data-status="{{ order.status }}">Оплатить</button>
+            <button class="delete-order-button" data-id="{{ order.id }}">Удалить</button>
+            <p class="status-message" id="status-message-{{ order.id }}"></p>
             </li>
         {% endfor %}
     </ul>
@@ -108,6 +74,42 @@
             });
         });
     });
+
+    // Обработка нажатия кнопки удаления заказа
+    document.querySelectorAll('.delete-order-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const orderId = button.getAttribute('data-id');
+            const statusMessage = document.getElementById(`status-message-${orderId}`);
+
+            // Отправка запроса на удаление заказа
+            fetch(`/api/orders/${orderId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'), // Не забудьте передать CSRF-токен, если нужен
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Удаление HTML элемента с заказом
+                    button.parentElement.remove(); // Удаляем родительский элемент (li)
+                    statusMessage.textContent = 'Заказ успешно удалён!';
+                    statusMessage.style.color = 'green';
+                } else {
+                    return response.json().then(data => {
+                        statusMessage.textContent = data.error || 'Ошибка удаления заказа';
+                        statusMessage.style.color = 'red';
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                statusMessage.textContent = 'Ошибка сети или сервера';
+                statusMessage.style.color = 'red';
+            });
+        });
+    });
+
 
     function getCookie(name) {
         let cookieValue = null;

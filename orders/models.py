@@ -14,9 +14,9 @@ class Items(models.Model):
 
 class Order(models.Model): # Использовать принципы ООП для построения модели Order:
     STATUS_CHOICES = [
-        ('pending', 'В ожидании'),
-        ('ready', 'Готово'),
-        ('paid', 'Оплачено'),
+        ('pending', 'в ожидании'),
+        ('ready', 'готово'),
+        ('paid', 'оплачено'),
     ]
 
     table_number = models.IntegerField()

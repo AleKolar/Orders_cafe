@@ -37,13 +37,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     # Получение конкретного заказа по его ID
-    def retrieve(self, request, pk=id):
+    def retrieve(self, request, *args, **kwargs):
         order = self.get_object()
         serializer = self.get_serializer(order)
         return Response(serializer.data)
 
     # Создание нового заказа
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = OrderCreateSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):  # Валидация и выброс исключения
             table_number = serializer.validated_data['table_number']
@@ -125,7 +125,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"error": "Необходимо указать номер стола."}, status=status.HTTP_400_BAD_REQUEST)
             # Получаем заказы по номеру стола с помощью filter и Q для фильтрации по нескольким статусам
         orders = Order.objects.filter(
-            Q(table_number=table_number) & (Q(status='в ожидании') | Q(status='paid') | Q(status='ready'))
+            Q(table_number=table_number) & (Q(status='в ожидании') | Q(status='pending') | Q(status='оплачено') | Q(status='paid') | Q(status='готово') | Q(status='ready'))
         )
         # Проверяем, есть ли заказы
         if not orders.exists():
@@ -135,14 +135,15 @@ class OrderViewSet(viewsets.ModelViewSet):
         # Возвращаем результат
         return Response({"table_number": table_number, "total_bill": total_bill})
 
-        # Удаление заказа по номеру стола
-    def destroy(self, request, pk):
+    # Удаление заказа по номеру стола
+    def destroy(self, request, *args, **kwargs):
         try:
-            order = Order.objects.get(id=pk)
+            order = Order.objects.get(id=kwargs['pk'])
             order.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Order.DoesNotExist:
             return Response({"error": "Заказ с данным номером стола не найден."}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class OrderUpdateStatusView(viewsets.ModelViewSet):
@@ -185,17 +186,6 @@ class RevenueView(APIView):
 
         return Response({'total_revenue': total_revenue})
 
-# class ApiRoot(APIView):
-#     """ Корневая точка API.
-#     Возвращает ссылки на доступные конечные точки API, включая списки заказов, продуктов, выручки и документацию Swagger.
-#     """
-#     def get(self, request, format=None):
-#         return Response({
-#             'orders': reverse('order-list'),  # Ссылка на список заказов
-#             'items': reverse('product-list'),  # Ссылка на список блюд
-#             'revenue': reverse('revenue'),  # Ссылка на выручку
-#             'swagger': reverse('schema-swagger-ui'),  # Ссылка на Swagger документацию
-#         })
 
 class OrderListView(generics.ListAPIView):
     """ Поиск по заданным параметрам """
@@ -210,11 +200,11 @@ def search_orders_by_tables(request):
         form = TableSearchForm(request.POST)
         if form.is_valid():
             table_number = form.cleaned_data['table_number']
-            orders = Order.objects.filter(table_number=table_number, status__in=['В ожидании', 'pending', 'Оплачено', 'paid', 'Готово', 'ready'])
+            orders = Order.objects.filter(table_number=table_number, status__in=['в ожидании', 'pending', 'оплачено', 'paid', 'готово', 'ready'])
             total_bill = sum(order.total_price for order in orders)
 
             return render(request, 'table_order_list.html',
-                          {'orders': orders, 'total_bill': total_bill, 'table_number': table_number})
+                              {'orders': orders, 'total_bill': total_bill, 'table_number': table_number})
     else:
         form = TableSearchForm()
 
@@ -225,3 +215,4 @@ class ApiRoot(APIView):
     """ Пользовательский интерфейс """
     def get(self, request, *args, **kwargs):
         return render(request, 'api_root.html')
+

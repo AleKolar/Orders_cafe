@@ -27,16 +27,6 @@ urlpatterns = [
     path('orders/bill/<int:table_number>/', OrderViewSet.as_view({'get': 'get_bill'}), name='get_bill'), # Добавление маршрута для "Счёт" со стола
     path('', ApiRoot.as_view(), name='api-root'),
 
-
-
-    # URLS ДЛЯ ТЕСТОВ
-
-    path('create/', OrderViewSet.as_view({'post': 'create'}), name='create_order'),
-
-    path('products/', ItemViewSet.as_view({'post': 'create'}), name='api_products_create'),
-
-    path('orders/<int:pk>', OrderViewSet.as_view({'delete': 'destroy'}), name='api_orders_delete'),
-
     path('orders/update_status/<int:id>/', OrderUpdateStatusView.as_view({'patch': 'update_status'}), name='update_status'),
 
 
