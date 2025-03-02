@@ -4,8 +4,8 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
-    ports:
-      - "8000:8000"
+    expose:  # expose для внутренней связи между сервисами
+      - "8000"
     environment:
       - DJANGO_SETTINGS_MODULE=mycafe.settings
       - PYTHONUNBUFFERED=1
@@ -24,6 +24,16 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
 
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf  # Путь к конфигурационному файлу Nginx
+      - static_volume:/app/static  # Статические файлы
+    ports:
+      - "80:80"  # Публикация порта 80 для доступа извне
+
+# Определение томов
 volumes:
   postgres_data:
+  static_volume:  #  том определен
 
