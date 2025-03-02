@@ -65,5 +65,5 @@ python manage.py runserver
 
 11. Метод REVENUE вывод суммарной прибыли всез заказов со статусом "paid" оплачено.
 
-12. p.s. Есть дублирование кода, много дополнительной логики - но время вышло. Собрал образы DockerHub: **https://hub.docker.com/repository/docker/alekolar17982/pythonproject9_orders_cafe-web-1/general**  - web,  **https://hub.docker.com/repository/docker/alekolar17982/pythonproject9_orders_cafe-db-1/general** - db и **https://hub.docker.com/repository/docker/alekolar17982/pythonproject9_orders_cafe-nginx-1/general** - nginx
+12. p.s. Есть дублирование кода, много дополнительной логики - но обоснованной требованиями, понятно, что можно улучшить, но время вышло. Собрал образы DockerHub: **https://hub.docker.com/repository/docker/alekolar17982/pythonproject9_orders_cafe-web-1/general**  - web,  **https://hub.docker.com/repository/docker/alekolar17982/pythonproject9_orders_cafe-db-1/general** - db и **https://hub.docker.com/repository/docker/alekolar17982/pythonproject9_orders_cafe-nginx-1/general** - nginx
 
